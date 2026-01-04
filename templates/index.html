@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DesignKu - Jasa Desain Profesional</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .page-content {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        #page-landing {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .hero-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .price-badge {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .price-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .price-badge:hover::before {
+            left: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 text-gray-900 font-sans">
+
+    <div id="notification" class="fixed top-5 right-5 z-50 p-4 rounded-xl shadow-2xl max-w-sm transition-transform translate-x-[150%] duration-300 ease-out flex items-center gap-3">
+        <div id="notification-icon"></div>
+        <p id="notification-text" class="font-medium"></p>
+    </div>
+
+    <nav class="glass-effect sticky top-0 z-40 border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center cursor-pointer group" onclick="showPage('page-landing')">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all group-hover:scale-110">
+                        <i data-lucide="pen-tool" class="h-6 w-6 text-white"></i>
+                    </div>
+                    <span class="ml-3 text-2xl font-black gradient-text">DesignKu</span>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" data-page="page-landing" class="nav-link text-gray-700 hover:text-blue-600 transition font-semibold relative group">
+                        Beranda
+                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
+                    </a>
+                    <a href="#" data-page="page-order" class="nav-link text-gray-700 hover:text-blue-600 transition font-semibold relative group">
+                        Pesan Desain
+                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
+                    </a>
+                    <a href="#" data-page="page-track" class="nav-link text-gray-700 hover:text-blue-600 transition font-semibold relative group">
+                        Lacak Pesanan
+                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
+                    </a>
+                    <a href="#" onclick="window.location.href='/admin/login'" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition text-sm font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
+                        Login Admin
+                    </a>
+                </div>
+
+                <div class="flex items-center md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-600 hover:text-gray-900 focus:outline-none">
+                        <i data-lucide="menu" id="mobile-menu-icon-open" class="h-6 w-6"></i>
+                        <i data-lucide="x" id="mobile-menu-icon-close" class="h-6 w-6 hidden"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden glass-effect border-t border-white/20">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#" data-page="page-landing" class="nav-link block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">Beranda</a>
+                <a href="#" data-page="page-order" class="nav-link block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">Pesan Desain</a>
+                <a href="#" data-page="page-track" class="nav-link block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">Lacak Pesanan</a>
+                <a href="/admin/login" class="block px-3 py-2 mt-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-base font-medium text-center">Login Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-screen">
+
+        <div id="page-landing" class="page-content">
+            <div class="relative overflow-hidden hero-gradient rounded-3xl shadow-2xl p-12 lg:p-20 mb-16">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 float-animation"></div>
+                <div class="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full -ml-48 -mb-48" style="animation: float 4s ease-in-out infinite;"></div>
+                
+                <div class="relative z-10 text-center">
+                    <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-semibold mb-6">
+                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                        Siap Melayani 24/7
+                    </div>
+                    
+                    <h1 class="text-5xl lg:text-7xl tracking-tight font-black text-white mb-6">
+                        Wujudkan Ide Kreatifmu<br>
+                        <span class="text-yellow-300">Bersama DesignKu</span>
+                    </h1>
+                    
+                    <p class="text-xl lg:text-2xl text-blue-100 mb-10 max-w-3xl mx-auto leading-relaxed">
+                        Jasa desain grafis profesional, cepat, dan terjangkau. Mulai dari logo, banner, hingga konten sosial media yang memukau!
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button onclick="showPage('page-order')" class="group px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-gray-50 text-lg font-bold shadow-xl hover:shadow-2xl transition transform hover:scale-105 flex items-center justify-center gap-2">
+                            <i data-lucide="rocket" class="w-6 h-6 group-hover:animate-bounce"></i>
+                            Pesan Sekarang
+                        </button>
+                        <button onclick="showPage('page-track')" class="px-8 py-4 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 text-lg font-bold border-2 border-white/50 transition transform hover:scale-105 flex items-center justify-center gap-2">
+                            <i data-lucide="search" class="w-6 h-6"></i>
+                            Lacak Pesanan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+                <div class="feature-card glass-effect p-8 rounded-2xl shadow-lg text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <i data-lucide="zap" class="h-8 w-8 text-white"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Pengerjaan Cepat</h3>
+                    <p class="text-gray-600 leading-relaxed">Hasil desain dikirim dalam waktu kurang dari 24-48 jam sesuai kerumitan proyek Anda.</p>
+                </div>
+
+                <div class="feature-card glass-effect p-8 rounded-2xl shadow-lg text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <i data-lucide="dollar-sign" class="h-8 w-8 text-white"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Harga Terjangkau</h3>
+                    <p class="text-gray-600 leading-relaxed">Kualitas premium dengan harga yang bersahabat untuk UMKM, startup, dan pelajar.</p>
+                </div>
+
+                <div class="feature-card glass-effect p-8 rounded-2xl shadow-lg text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                        <i data-lucide="check-circle" class="h-8 w-8 text-white"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Revisi Gratis</h3>
+                    <p class="text-gray-600 leading-relaxed">Kami memberikan jaminan revisi minor sampai Anda benar-benar puas dengan hasilnya.</p>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-3xl shadow-2xl p-10 mb-16">
+                <h2 class="text-4xl font-black text-center mb-4 gradient-text">Daftar Layanan & Harga</h2>
+                <p class="text-center text-gray-600 mb-10 text-lg">Pilih paket yang sesuai dengan kebutuhan Anda</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="price-badge bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white transform hover:scale-105 transition shadow-lg">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i data-lucide="aperture" class="w-8 h-8"></i>
+                            <h3 class="text-xl font-bold">Desain Logo</h3>
+                        </div>
+                        <p class="text-3xl font-black mb-2">Rp 300.000</p>
+                        <p class="text-blue-100 text-sm">Logo unik & memorable untuk brand Anda</p>
+                    </div>
+
+                    <div class="price-badge bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white transform hover:scale-105 transition shadow-lg">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i data-lucide="layout" class="w-8 h-8"></i>
+                            <h3 class="text-xl font-bold">Desain UI/UX</h3>
+                        </div>
+                        <p class="text-3xl font-black mb-2">Rp 800.000</p>
+                        <p class="text-purple-100 text-sm">Interface modern & user-friendly</p>
+                    </div>
+
+                    <div class="price-badge bg-gradient-to-br from-pink-500 to-pink-600 p-6 rounded-2xl text-white transform hover:scale-105 transition shadow-lg">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i data-lucide="instagram" class="w-8 h-8"></i>
+                            <h3 class="text-xl font-bold">Konten Sosmed</h3>
+                        </div>
+                        <p class="text-3xl font-black mb-2">Rp 500.000</p>
+                        <p class="text-pink-100 text-sm">Feed Instagram yang menarik & engaging</p>
+                    </div>
+
+                    <div class="price-badge bg-gradient-to-br from-yellow-500 to-orange-500 p-6 rounded-2xl text-white transform hover:scale-105 transition shadow-lg">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i data-lucide="image" class="w-8 h-8"></i>
+                            <h3 class="text-xl font-bold">Banner/Spanduk</h3>
+                        </div>
+                        <p class="text-3xl font-black mb-2">Rp 150.000</p>
+                        <p class="text-yellow-100 text-sm">Banner promosi yang eye-catching</p>
+                    </div>
+
+                    <div class="price-badge bg-gradient-to-br from-green-500 to-teal-500 p-6 rounded-2xl text-white transform hover:scale-105 transition shadow-lg">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i data-lucide="package" class="w-8 h-8"></i>
+                            <h3 class="text-xl font-bold">Paket Custom</h3>
+                        </div>
+                        <p class="text-3xl font-black mb-2">Mulai 100K</p>
+                        <p class="text-green-100 text-sm">Sesuaikan dengan budget Anda</p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-gray-700 to-gray-800 p-6 rounded-2xl text-white flex items-center justify-center text-center">
+                        <div>
+                            <i data-lucide="sparkles" class="w-12 h-12 mx-auto mb-3"></i>
+                            <p class="font-bold text-lg">Butuh layanan lain?</p>
+                            <p class="text-gray-300 text-sm mt-2">Hubungi kami untuk konsultasi gratis!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-order" class="page-content">
+            <div class="max-w-3xl mx-auto">
+                <div class="glass-effect p-10 rounded-3xl shadow-2xl border-2 border-blue-100">
+                    <div class="text-center mb-10">
+                        <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-6 shadow-lg">
+                            <i data-lucide="file-edit" class="w-10 h-10 text-white"></i>
+                        </div>
+                        <h2 class="text-4xl font-black gradient-text mb-3">Formulir Pemesanan</h2>
+                        <p class="text-gray-600 text-lg">Isi detail kebutuhan desain Anda di bawah ini</p>
+                    </div>
+
+                    <form id="order-form" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Nama Lengkap</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i data-lucide="user" class="h-5 w-5 text-blue-400"></i>
+                                </div>
+                                <input type="text" id="name" required class="pl-12 block w-full border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 py-4 transition" placeholder="Contoh: Budi Santoso">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">No. WhatsApp</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i data-lucide="phone" class="h-5 w-5 text-green-400"></i>
+                                </div>
+                                <input type="tel" id="whatsapp" required class="pl-12 block w-full border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 py-4 transition" placeholder="08xxxxxxxxxx">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Jenis Layanan</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i data-lucide="layers" class="h-5 w-5 text-purple-400"></i>
+                                </div>
+                                <select id="service" required class="pl-12 block w-full border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 py-4 bg-white transition font-medium">
+                                    <option value="" disabled selected>Pilih layanan...</option>
+                                    <option value="Desain Logo">🎨 Desain Logo (Rp 300.000)</option>
+                                    <option value="Desain UI/UX">💻 Desain UI/UX (Rp 800.000)</option>
+                                    <option value="Desain Konten Sosmed">📱 Konten Sosmed (Rp 500.000)</option>
+                                    <option value="Desain Banner/Spanduk">🖼️ Banner/Spanduk (Rp 150.000)</option>
+                                    <option value="Lainnya">✨ Lainnya (Custom)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="other-service-container" class="hidden">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Sebutkan Layanan Lainnya</label>
+                            <input type="text" id="other-service" class="block w-full border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 py-4 px-4 transition" placeholder="Jelaskan layanan yang Anda butuhkan">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Deadline (Tenggat Waktu)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i data-lucide="calendar" class="h-5 w-5 text-orange-400"></i>
+                                </div>
+                                <input type="date" id="deadline" required class="pl-12 block w-full border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 py-4 transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Deskripsi / Detail Pesanan</label>
+                            <textarea id="description" rows="5" required class="block w-full border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 p-4 transition" placeholder="Jelaskan warna, konsep, atau referensi yang diinginkan..."></textarea>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-blue-500 to-purple-500 p-6 rounded-2xl flex justify-between items-center text-white shadow-lg">
+                            <div>
+                                <p class="text-sm font-semibold text-blue-100">Estimasi Harga</p>
+                                <p id="price-display" class="text-3xl font-black">Rp 0</p>
+                            </div>
+                            <i data-lucide="tag" class="w-12 h-12 text-white/50"></i>
+                        </div>
+
+                        <button type="submit" class="w-full flex justify-center items-center gap-3 py-5 px-6 border-0 rounded-xl shadow-xl text-xl font-black text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-blue-200 transition transform hover:scale-105">
+                            <i data-lucide="send" class="w-6 h-6"></i>
+                            Kirim Pesanan Sekarang
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-track" class="page-content">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-12">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-6 shadow-lg">
+                        <i data-lucide="package-search" class="w-10 h-10 text-white"></i>
+                    </div>
+                    <h2 class="text-4xl font-black gradient-text mb-3">Lacak Status Pesanan</h2>
+                    <p class="text-gray-600 text-lg">Masukkan ID Pesanan yang Anda dapatkan setelah memesan</p>
+                </div>
+
+                <div class="glass-effect p-8 rounded-2xl shadow-xl mb-10 border-2 border-blue-100">
+                    <form id="track-order-form" class="flex gap-4">
+                        <input type="text" id="track-order-id" required class="flex-1 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 px-6 py-4 text-lg font-mono transition" placeholder="Contoh: ORD-123456-789">
+                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-purple-700 font-bold transition transform hover:scale-105 shadow-lg flex items-center gap-2">
+                            <i data-lucide="search" class="w-5 h-5"></i>
+                            Cari
+                        </button>
+                    </form>
+                </div>
+
+                <div id="track-result" class="hidden glass-effect rounded-2xl shadow-2xl overflow-hidden border-2 border-blue-100">
+                    <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6 flex justify-between items-center">
+                        <div>
+                            <p class="text-blue-100 text-sm font-semibold">Order ID</p>
+                            <p id="detail-order-id" class="text-white font-mono font-bold text-xl"></p>
+                        </div>
+                        <span id="detail-status" class="px-4 py-2 rounded-xl text-sm font-bold bg-white/20 text-white border-2 border-white/50"></span>
+                    </div>
+                    
+                    <div class="p-8 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-blue-50 p-5 rounded-xl border border-blue-100">
+                                <h4 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Nama Pemesan</h4>
+                                <p id="detail-name" class="text-xl font-bold text-gray-900"></p>
+                            </div>
+                            <div class="bg-purple-50 p-5 rounded-xl border border-purple-100">
+                                <h4 class="text-xs font-bold text-purple-600 uppercase tracking-wider mb-2">Layanan</h4>
+                                <p id="detail-service" class="text-xl font-bold text-gray-900"></p>
+                            </div>
+                            <div class="bg-orange-50 p-5 rounded-xl border border-orange-100">
+                                <h4 class="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">Deadline</h4>
+                                <p id="detail-deadline" class="text-lg font-bold text-gray-900"></p>
+                            </div>
+                            <div class="bg-green-50 p-5 rounded-xl border border-green-100">
+                                <h4 class="text-xs font-bold text-green-600 uppercase tracking-wider mb-2">Total Harga</h4>
+                                <p id="detail-price" class="text-2xl font-black text-green-600"></p>
+                            </div>
+                        </div>
+
+                        <div id="payment-section" class="hidden mt-8 pt-8 border-t border-gray-200">
+                            <div class="bg-gradient-to-br from-orange-50 to-yellow-50 p-6 rounded-2xl border-2 border-orange-200">
+                                <h3 class="font-bold text-orange-800 text-xl mb-4 flex items-center gap-2">
+                                    <i data-lucide="credit-card" class="w-6 h-6"></i>
+                                    Informasi Pembayaran
+                                </h3>
+                                <p class="text-sm text-orange-700 mb-6 font-medium">Silakan transfer ke salah satu rekening berikut:</p>
+                                
+                                <div id="bank-accounts-list" class="space-y-4 mb-6"></div>
+
+                                <button id="confirm-payment-btn" class="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white font-bold py-4 rounded-xl hover:from-green-700 hover:to-teal-700 transition transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg">
+                                    <i data-lucide="message-circle" class="w-6 h-6"></i>
+                                    Konfirmasi Pembayaran via WhatsApp
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="review-section" class="hidden mt-8 pt-8 border-t border-gray-200">
+                            <h3 class="font-bold text-gray-800 text-xl mb-4">📝 Berikan Ulasan Anda</h3>
+                            <form id="review-form" class="space-y-4">
+                                <textarea id="review-text" rows="4" class="w-full border-2 border-gray-200 rounded-xl p-4 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition" placeholder="Bagaimana pengalaman Anda menggunakan layanan kami?"></textarea>
+                                <button type="submit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition transform hover:scale-105">Kirim Ulasan</button>
+                            </form>
+                        </div>
+
+                        <div id="track-existing-review" class="hidden mt-8 pt-8 border-t border-gray-200">
+                            <h3 class="font-bold text-gray-800 text-xl mb-4">⭐ Ulasan Anda</h3>
+                            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-2xl italic text-gray-700 border-2 border-yellow-200">
+                                <p id="existing-review-text" class="text-lg"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="order-success-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+        <div class="glass-effect p-10 rounded-3xl shadow-2xl max-w-md w-full text-center m-4 transform transition-all scale-100 border-2 border-white/20">
+            <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 mb-6 shadow-lg">
+                <i data-lucide="check" class="h-10 w-10 text-white"></i>
+            </div>
+            <h3 class="text-3xl font-black text-gray-900 mb-3">Pesanan Berhasil!</h3>
+            <p class="text-gray-600 mb-8 text-lg">Simpan ID Pesanan ini untuk mengecek status pengerjaan</p>
+            
+            <div class="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-2xl mb-8 border-2 border-blue-200">
+                <p class="text-xs text-blue-600 uppercase tracking-wider font-bold mb-2">Order ID</p>
+                <p id="order-success-id" class="text-3xl font-mono font-black text-gray-900 select-all tracking-wider"></p>
+            </div>
+
+            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-xl mb-8 text-left border border-yellow-200">
+                <div class="flex items-start gap-3">
+                    <i data-lucide="info" class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0"></i>
+                    <p class="text-sm text-gray-700 font-medium">Admin kami akan segera menghubungi Anda via WhatsApp setelah verifikasi data.</p>
+                </div>
+            </div>
+
+            <button id="order-success-close" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-4 px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 transition duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
+                Lacak Status Sekarang
+            </button>
+        </div>
+    </div>
+    
+    <footer class="glass-effect border-t border-white/20 mt-20">
+        <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center gap-2 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i data-lucide="pen-tool" class="h-5 w-5 text-white"></i>
+                    </div>
+                    <span class="text-xl font-black gradient-text">DesignKu</span>
+                </div>
+                <p class="text-gray-500 text-sm font-medium">
+                    &copy; 2026 DesignKu. All rights reserved.
+                </p>
+                <p class="text-gray-400 text-xs mt-2">
+                    Wujudkan Ide Kreatif Anda Bersama Kami 🎨
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            const links = document.querySelectorAll('.nav-link');
+            links.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const pageId = link.dataset.page;
+                    showPage(pageId);
+                    
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                    document.getElementById('mobile-menu-icon-open').classList.remove('hidden');
+                    document.getElementById('mobile-menu-icon-close').classList.add('hidden');
+                });
+            });
+
+            const btn = document.getElementById('mobile-menu-button');
+            const menu = document.getElementById('mobile-menu');
+            const iconOpen = document.getElementById('mobile-menu-icon-open');
+            const iconClose = document.getElementById('mobile-menu-icon-close');
+
+            if(btn) {
+                btn.addEventListener('click', () => {
+                    menu.classList.toggle('hidden');
+                    iconOpen.classList.toggle('hidden');
+                    iconClose.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

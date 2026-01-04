@@ -1,0 +1,15 @@
+/* Menggunakan font Inter sebagai default */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Mencegah pergeseran tata letak saat scrollbar muncul */
+html {
+    overflow-y: scroll;
+}
+
+/* Style untuk pre-wrap di modal detail (preserve whitespace) */
+.preserve-whitespace {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
