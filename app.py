@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, jsonify, Response, redirect, url_for
-import sqlite3
+from flask import Flask, render_template, request, jsonify, Response
+import mysql.connector
+from mysql.connector import Error
 import os
 import csv
 from io import StringIO
@@ -7,50 +8,69 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# Nama file database
-DB_NAME = "database.db"
-
-# Kredensial Admin (Ganti sesuai kebutuhan)
+# ===== KONFIGURASI DATABASE AZURE MYSQL =====
+# ===== KONFIGURASI DATABASE AZURE MYSQL (VERSI TANPA SSL) =====
+# ===== KONFIGURASI DATABASE AZURE MYSQL (TANPA SSL) =====
+# ===== KONFIGURASI DATABASE AZURE MYSQL =====
+DB_CONFIG = {
+    'host': 'ajimex.mysql.database.azure.com',
+    'user': 'Sqladmin',
+    'password': 'PASSWORD_AKAN_DIISI_NANTI', # <-- Isi begini saja dulu
+    'database': 'designku_db',
+    'port': 3306
+}
+# Kredensial Admin
 ADMIN_CREDENTIALS = {
     "admin": "admin123",
     "superadmin": "super123"
 }
 
-# --- BAGIAN DATABASE ---
+# ===== FUNGSI DATABASE =====
+
+def get_db_connection():
+    """Membuat koneksi ke Azure MySQL"""
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        return conn
+    except Error as e:
+        print(f"Error connecting to MySQL: {e}")
+        return None
+
 def init_db():
-    """Membuat tabel database otomatis sesuai field di HTML Anda"""
-    if not os.path.exists(DB_NAME):
-        conn = sqlite3.connect(DB_NAME)
+    """Membuat tabel orders jika belum ada"""
+    conn = get_db_connection()
+    if not conn:
+        print("Failed to connect to database!")
+        return
+    
+    try:
         cursor = conn.cursor()
-        
-        # Tabel Orders (disesuaikan dengan form index.html)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS orders (
-                id TEXT PRIMARY KEY,
-                name TEXT,
-                whatsapp TEXT,
-                service TEXT,
-                deadline TEXT,
+                id VARCHAR(50) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                whatsapp VARCHAR(20) NOT NULL,
+                service VARCHAR(255) NOT NULL,
+                deadline DATE NOT NULL,
                 description TEXT,
-                price INTEGER,
-                status TEXT,
-                date TEXT,
+                price INT NOT NULL,
+                status VARCHAR(255) NOT NULL,
+                date DATETIME NOT NULL,
                 review TEXT
             )
         ''')
         conn.commit()
+        print("✅ Database table 'orders' ready!")
+    except Error as e:
+        print(f"Error creating table: {e}")
+    finally:
+        cursor.close()
         conn.close()
-        print("Database berhasil dibuat!")
 
-# Jalankan saat aplikasi mulai
+# Jalankan inisialisasi saat aplikasi start
 init_db()
 
-def get_db_connection():
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row # Agar bisa akses kolom pakai nama (row['name'])
-    return conn
-
-# --- BAGIAN ROUTE HALAMAN (HTML) ---
+# ===== ROUTE HALAMAN HTML =====
 
 @app.route('/')
 def home():
@@ -62,10 +82,9 @@ def admin_login_page():
 
 @app.route('/admin')
 def admin_page():
-    # Redirect ke login jika belum login (ini cuma proteksi dasar)
     return render_template('admin.html')
 
-# --- BAGIAN API ADMIN LOGIN ---
+# ===== API ADMIN LOGIN =====
 
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
@@ -73,7 +92,6 @@ def admin_login():
     username = data.get('username', '')
     password = data.get('password', '')
     
-    # Verifikasi kredensial
     if username in ADMIN_CREDENTIALS and ADMIN_CREDENTIALS[username] == password:
         return jsonify({
             "success": True,
@@ -86,119 +104,205 @@ def admin_login():
             "message": "Username atau password salah!"
         }), 401
 
-# --- BAGIAN API ORDERS ---
+# ===== API ORDERS =====
 
-# 1. API: Simpan Order Baru (Dari script.js)
 @app.route('/api/orders', methods=['POST'])
 def create_order():
+    """Simpan order baru ke MySQL"""
     data = request.json
     conn = get_db_connection()
+    
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
     try:
-        conn.execute('''
+        cursor = conn.cursor()
+        cursor.execute('''
             INSERT INTO orders (id, name, whatsapp, service, deadline, description, price, status, date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (
-            data['orderId'], data['name'], data['whatsapp'], data['service'], 
-            data['deadline'], data['description'], data['price'], 
-            data['status'], data['timestamp']
+            data['orderId'], 
+            data['name'], 
+            data['whatsapp'], 
+            data['service'], 
+            data['deadline'], 
+            data['description'], 
+            data['price'], 
+            data['status'], 
+            data['timestamp']
         ))
         conn.commit()
         return jsonify({"message": "Order sukses!", "id": data['orderId']}), 201
-    except Exception as e:
+    except Error as e:
+        print(f"Error inserting order: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
+        cursor.close()
         conn.close()
 
-# 2. API: Ambil Semua Order (Untuk Admin & Lacak Pesanan)
 @app.route('/api/orders', methods=['GET'])
 def get_orders():
+    """Ambil semua orders dari MySQL"""
     conn = get_db_connection()
-    orders = conn.execute('SELECT * FROM orders').fetchall()
-    conn.close()
     
-    # Ubah format database ke format JSON yang dimengerti JS Anda
-    orders_list = []
-    for row in orders:
-        orders_list.append({
-            "orderId": row['id'],
-            "name": row['name'],
-            "whatsapp": row['whatsapp'],
-            "service": row['service'],
-            "deadline": row['deadline'],
-            "description": row['description'],
-            "price": row['price'],
-            "status": row['status'],
-            "timestamp": row['date'],
-            "review": row['review']
-        })
-    return jsonify(orders_list)
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM orders ORDER BY date DESC')
+        orders = cursor.fetchall()
+        
+        # Konversi datetime ke string
+        orders_list = []
+        for row in orders:
+            orders_list.append({
+                "orderId": row['id'],
+                "name": row['name'],
+                "whatsapp": row['whatsapp'],
+                "service": row['service'],
+                "deadline": row['deadline'].strftime('%Y-%m-%d') if row['deadline'] else '',
+                "description": row['description'],
+                "price": row['price'],
+                "status": row['status'],
+                "timestamp": row['date'].strftime('%Y-%m-%dT%H:%M:%S') if row['date'] else '',
+                "review": row['review']
+            })
+        
+        return jsonify(orders_list), 200
+    except Error as e:
+        print(f"Error fetching orders: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
-# 3. API: Update Status (Untuk Admin)
 @app.route('/api/orders/update-status', methods=['POST'])
 def update_status():
+    """Update status order"""
     data = request.json
     conn = get_db_connection()
-    conn.execute('UPDATE orders SET status = ? WHERE id = ?', (data['status'], data['orderId']))
-    conn.commit()
-    conn.close()
-    return jsonify({"message": "Status updated"})
+    
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute('UPDATE orders SET status = %s WHERE id = %s', 
+                      (data['status'], data['orderId']))
+        conn.commit()
+        return jsonify({"message": "Status updated"}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
-# 4. API: Hapus Order (Untuk Admin)
 @app.route('/api/orders/delete', methods=['POST'])
 def delete_order():
+    """Hapus order"""
     data = request.json
     conn = get_db_connection()
-    conn.execute('DELETE FROM orders WHERE id = ?', (data['orderId'],))
-    conn.commit()
-    conn.close()
-    return jsonify({"message": "Order deleted"})
+    
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM orders WHERE id = %s', (data['orderId'],))
+        conn.commit()
+        return jsonify({"message": "Order deleted"}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
-# 5. API: Kirim Review (Dari script.js)
 @app.route('/api/orders/review', methods=['POST'])
 def submit_review():
+    """Submit review"""
     data = request.json
     conn = get_db_connection()
-    conn.execute('UPDATE orders SET review = ? WHERE id = ?', (data['review'], data['orderId']))
-    conn.commit()
-    conn.close()
-    return jsonify({"message": "Review submitted"})
+    
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute('UPDATE orders SET review = %s WHERE id = %s', 
+                      (data['review'], data['orderId']))
+        conn.commit()
+        return jsonify({"message": "Review submitted"}), 200
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
-# 6. API: Export CSV
 @app.route('/api/orders/export-csv', methods=['GET'])
 def export_csv():
+    """Export orders ke CSV"""
     conn = get_db_connection()
-    orders = conn.execute('SELECT * FROM orders ORDER BY date DESC').fetchall()
-    conn.close()
     
-    # Buat CSV di memory
-    output = StringIO()
-    writer = csv.writer(output)
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
     
-    # Header CSV
-    writer.writerow(['Order ID', 'Nama', 'WhatsApp', 'Layanan', 'Deadline', 'Deskripsi', 'Harga', 'Status', 'Tanggal Order', 'Review'])
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM orders ORDER BY date DESC')
+        orders = cursor.fetchall()
+        
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        writer.writerow(['Order ID', 'Nama', 'WhatsApp', 'Layanan', 'Deadline', 
+                        'Deskripsi', 'Harga', 'Status', 'Tanggal Order', 'Review'])
+        
+        for order in orders:
+            writer.writerow([
+                order['id'],
+                order['name'],
+                order['whatsapp'],
+                order['service'],
+                order['deadline'],
+                order['description'],
+                order['price'],
+                order['status'],
+                order['date'],
+                order['review'] or '-'
+            ])
+        
+        output.seek(0)
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename=pesanan_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
+        )
+    except Error as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# ===== TEST DATABASE CONNECTION =====
+
+@app.route('/db-test')
+def db_test():
+    """Route untuk test koneksi database"""
+    conn = get_db_connection()
     
-    # Data rows
-    for order in orders:
-        writer.writerow([
-            order['id'],
-            order['name'],
-            order['whatsapp'],
-            order['service'],
-            order['deadline'],
-            order['description'],
-            order['price'],
-            order['status'],
-            order['date'],
-            order['review'] or '-'
-        ])
-    
-    # Kirim sebagai file download
-    output.seek(0)
-    return Response(
-        output.getvalue(),
-        mimetype='text/csv',
-        headers={'Content-Disposition': f'attachment; filename=pesanan_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
-    )
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT VERSION()")
+            version = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            return f"✅ Database connected! MySQL version: {version[0]}"
+        except Error as e:
+            return f"❌ Database error: {str(e)}"
+    else:
+        return "❌ Failed to connect to database"
 
 if __name__ == '__main__':
     app.run(debug=True)
