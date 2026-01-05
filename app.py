@@ -13,9 +13,9 @@ app = Flask(__name__)
 # ===== KONFIGURASI DATABASE AZURE MYSQL (TANPA SSL) =====
 # ===== KONFIGURASI DATABASE AZURE MYSQL =====
 DB_CONFIG = {
-    'host': 'ajimex.mysql.database.azure.com',
+    'host': 'ajimex-design.mysql.database.azure.com', # <-- Pastikan ini benar
     'user': 'Sqladmin',
-    'password': 'PASSWORD_AKAN_DIISI_NANTI', # <-- Isi begini saja dulu
+    'password': 'Admin_123',
     'database': 'designku_db',
     'port': 3306
 }
@@ -116,6 +116,15 @@ def create_order():
         return jsonify({"error": "Database connection failed"}), 500
     
     try:
+        # === BAGIAN PERBAIKAN TANGGAL (FIX) ===
+        # Mengubah format '2026-01-05T14:31:07.040Z' menjadi '2026-01-05 14:31:07'
+        tanggal_raw = data.get('timestamp')
+        if tanggal_raw and 'T' in tanggal_raw:
+            tanggal_fix = tanggal_raw.replace('T', ' ').replace('Z', '').split('.')[0]
+        else:
+            tanggal_fix = tanggal_raw
+        # ======================================
+
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO orders (id, name, whatsapp, service, deadline, description, price, status, date)
@@ -129,7 +138,7 @@ def create_order():
             data['description'], 
             data['price'], 
             data['status'], 
-            data['timestamp']
+            tanggal_fix  # <-- Pakai tanggal yang sudah dibersihkan
         ))
         conn.commit()
         return jsonify({"message": "Order sukses!", "id": data['orderId']}), 201
