@@ -207,13 +207,29 @@ function exportToCSV() {
 // MODAL HANDLERS
 // =================================================
 
+// =================================================
+// SOLUSI PERBAIKAN: DETEKSI NOMOR HP 08... JADI 628...
+// =================================================
+
 window.openDetailModal = function(id) {
     const order = allOrders.find(o => o.orderId === id);
     if (!order) return;
 
     document.getElementById('detail-id').textContent = order.orderId;
     document.getElementById('detail-name').textContent = order.name;
-    document.getElementById('detail-whatsapp').innerHTML = `<a href="https://wa.me/${order.whatsapp}" target="_blank" class="text-blue-600 hover:underline flex items-center gap-1">${order.whatsapp} <i data-lucide="external-link" class="w-3 h-3"></i></a>`;
+
+    // --- BAGIAN PERBAIKAN WHATSAPP ---
+    let nomorWA = order.whatsapp;
+    
+    // Cek: Kalau depannya "0", ganti jadi "62"
+    if (nomorWA.startsWith('0')) {
+        nomorWA = '62' + nomorWA.slice(1);
+    }
+    
+    // Sekarang linknya pakai nomorWA (yang sudah 62), tapi teks tampilan tetap order.whatsapp (asli)
+    document.getElementById('detail-whatsapp').innerHTML = `<a href="https://wa.me/${nomorWA}" target="_blank" class="text-blue-600 hover:underline flex items-center gap-1">${order.whatsapp} <i data-lucide="external-link" class="w-3 h-3"></i></a>`;
+    // ----------------------------------
+
     document.getElementById('detail-service').textContent = order.service;
     document.getElementById('detail-deadline').textContent = order.deadline;
     document.getElementById('detail-desc').textContent = order.description;
